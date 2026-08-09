@@ -1,2 +1,3 @@
-# PiRAG
-RAG-based AI assistant for querying Raspberry Pi documentation using semantic search, vector embeddings, and LLM-powered responses.
+# PolicyRAG
+
+RAG-based AI assistant for analyzing insurance policy documents, enabling users to ask questions, understand coverage and exclusions, compare policies, and retrieve answers with source citations.
