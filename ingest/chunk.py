@@ -33,7 +33,7 @@ text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=20
 chunks = text_splitter.split_documents(documents)
 #embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
-db_name = "vector_db"
+db_name = str(Path(__file__).resolve().parent.parent / "vector_db")
 if os.path.exists(db_name):
     Chroma(persist_directory=db_name, embedding_function=embeddings).delete_collection()
 
