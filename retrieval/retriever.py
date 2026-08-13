@@ -57,4 +57,7 @@ def answer_question(question: str, history):
     ])
 
     return response.content
-gr.ChatInterface(answer_question).launch()
+
+
+if __name__ == "__main__":
+    gr.ChatInterface(answer_question).launch()
