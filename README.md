@@ -1,489 +1,799 @@
-# PolicyRAG
+# 🛡️ Insurance Policy QA
 
-A Retrieval-Augmented Generation (RAG) based AI assistant for querying insurance policy documents using semantic search, vector embeddings, ChromaDB, and an LLM.
+A **Retrieval-Augmented Generation (RAG)** based AI assistant that allows users to ask natural-language questions about insurance policy documents.
 
-PolicyRAG allows users to ask natural-language questions about insurance policies and retrieve relevant information from the underlying policy documents.
+The system converts insurance policy PDFs into searchable text, splits them into meaningful chunks, generates vector embeddings, stores them in a **Chroma vector database**, retrieves the most relevant sections for a user's question, and uses an LLM to generate an answer based **only on the retrieved policy information**.
 
----
-
-## Features
-
-- Load insurance policy documents in Markdown format
-- Split large documents into smaller chunks
-- Generate semantic embeddings using OpenAI
-- Store embeddings and documents in ChromaDB
-- Perform semantic similarity search
-- Retrieve relevant sections of insurance policies
-- Generate natural-language responses using GPT-4o-mini
-- Interactive question-answering interface using Gradio
-- Environment variables for securely managing API keys
+This helps users understand complex insurance policies without manually searching through lengthy policy documents.
 
 ---
 
-## Architecture
+## 🚀 Features
+
+* 📄 **PDF Policy Processing**
+
+  * Converts insurance policy PDFs into Markdown using [Docling](https://github.com/docling-project/docling).
+
+* ✂️ **Document Chunking**
+
+  * Splits policy documents into smaller overlapping chunks using LangChain's `RecursiveCharacterTextSplitter`.
+
+* 🧠 **Semantic Search**
+
+  * Converts document chunks into vector embeddings using OpenAI's `text-embedding-3-large` model.
+
+* 🗄️ **Vector Database**
+
+  * Stores embeddings in ChromaDB for efficient similarity-based retrieval.
+
+* 🔎 **Top-K Retrieval**
+
+  * Retrieves the 5 most relevant document chunks for each user question.
+
+* 🤖 **LLM-Powered Answers**
+
+  * Uses `gpt-4o-mini` to generate answers from the retrieved policy context.
+
+* 🛡️ **Context-Grounded Responses**
+
+  * The assistant is explicitly instructed not to invent policy information or use external knowledge when the answer cannot be found in the retrieved documents.
+
+* 💬 **Interactive Chat Interface**
+
+  * Provides a simple Gradio interface for asking questions about the policies.
+
+---
+
+## 🧠 How It Works
+
+The project follows a standard **RAG pipeline**:
 
 ```text
-                 Insurance Policy Documents
-                           │
-                           ▼
-                    Document Loading
-                           │
-                           ▼
-                     Text Chunking
-                           │
-                           ▼
-              RecursiveCharacterTextSplitter
-                           │
-                           ▼
-                  OpenAI Embeddings
-              text-embedding-3-large
-                           │
-                           ▼
-                       ChromaDB
-                    Vector Database
-                           │
-                           ▼
-                    Similarity Search
-                           │
-                           ▼
-                 Relevant Policy Chunks
-                           │
-                           ▼
-                     GPT-4o-mini
-                           │
-                           ▼
+                  Insurance Policy PDF
+                          │
+                          ▼
+                 ┌─────────────────┐
+                 │     Docling     │
+                 │ PDF → Markdown  │
+                 └────────┬────────┘
+                          │
+                          ▼
+                    Policy Text
+                          │
+                          ▼
+              ┌──────────────────────┐
+              │  Text Chunking       │
+              │  LangChain           │
+              │  1000 tokens/chars   │
+              │  200 overlap         │
+              └──────────┬───────────┘
+                         │
+                         ▼
+                 Document Chunks
+                         │
+                         ▼
+              ┌──────────────────────┐
+              │ OpenAI Embeddings    │
+              │ text-embedding-3-    │
+              │ large                │
+              └──────────┬───────────┘
+                         │
+                         ▼
+                 ┌─────────────────┐
+                 │    ChromaDB     │
+                 │  Vector Store   │
+                 └────────┬────────┘
+                          │
+              User Question
+                          │
+                          ▼
+                 Query Embedding
+                          │
+                          ▼
+                 Similarity Search
+                          │
+                          ▼
+                Top 5 Relevant Chunks
+                          │
+                          ▼
+                 ┌─────────────────┐
+                 │    GPT-4o-mini  │
+                 │ Answer Generator│
+                 └────────┬────────┘
+                          │
+                          ▼
                     Final Answer
-Tech Stack
-Technology	Purpose
-Python	Core programming language
-LangChain	RAG pipeline and document processing
-OpenAI	Embeddings and LLM
-text-embedding-3-large	Text embeddings
-GPT-4o-mini	Response generation
-ChromaDB	Vector database
-Gradio	User interface
-Docling	PDF/document conversion
-Python-dotenv	Environment variable management
-Project Structure
+```
+
+---
+
+## 🏗️ Project Architecture
+
+The project is separated into two major stages:
+
+### 1. Ingestion
+
+The ingestion pipeline prepares the insurance documents for retrieval.
+
+```text
+PDF
+ │
+ ▼
+Docling
+ │
+ ▼
+Markdown
+ │
+ ▼
+Chunking
+ │
+ ▼
+Embeddings
+ │
+ ▼
+ChromaDB
+```
+
+### 2. Retrieval & Generation
+
+The retrieval pipeline handles user questions.
+
+```text
+User Question
+      │
+      ▼
+Semantic Retrieval
+      │
+      ▼
+Top 5 Relevant Chunks
+      │
+      ▼
+Context Construction
+      │
+      ▼
+GPT-4o-mini
+      │
+      ▼
+Answer
+```
+
+---
+
+## 📂 Project Structure
+
+```text
 Insurance-Policy-QA/
 │
 ├── data/
-│   └── knowledge-base/
-│       ├── policy1.md
-│       ├── policy2.md
-│       └── ...
+│   ├── knowledge-base/
+│   │   └── *.md
+│   │
+│   └── original-pdfs/
+│       └── *.pdf
 │
 ├── ingest/
-│   └── ...
+│   ├── convert.py
+│   ├── clean.py
+│   └── chunk.py
 │
 ├── retrieval/
-│   └── retriever.py
+│   ├── embeddings.py
+│   ├── retriever.py
+│   └── vector_store.py
 │
 ├── vector_db/
-│   └── ...
+│   └── ChromaDB files
 │
-├── .env
-├── .gitignore
+├── ok.ipynb
 ├── requirements.txt
+├── .gitignore
+├── LICENSE
 └── README.md
-How the Project Works
+```
 
-PolicyRAG is divided into two major stages:
+The repository currently separates document ingestion under `ingest/` and retrieval under `retrieval/`.
 
-Ingestion
-Retrieval
+---
 
-The ingestion pipeline prepares the knowledge base and creates the vector database.
+# ⚙️ Technologies Used
 
-The retrieval pipeline searches the vector database when the user asks a question.
+| Technology             | Purpose                                   |
+| ---------------------- | ----------------------------------------- |
+| **Python**             | Core programming language                 |
+| **Docling**            | PDF document conversion                   |
+| **LangChain**          | Document loading, splitting and retrieval |
+| **OpenAI Embeddings**  | Semantic vector representations           |
+| **ChromaDB**           | Vector database                           |
+| **OpenAI GPT-4o-mini** | Answer generation                         |
+| **Gradio**             | Chat interface                            |
+| **python-dotenv**      | Environment variable management           |
 
-1. Document Ingestion
+The current `requirements.txt` includes Docling, while the application code uses additional LangChain, OpenAI, Chroma and Gradio components.
 
-The insurance policy documents are first converted into Markdown files.
+---
 
-The Markdown files are stored inside:
+# 🔧 Installation
 
+## 1. Clone the repository
+
+```bash
+git clone https://github.com/anishpulsay/Insurance-Policy-QA.git
+cd Insurance-Policy-QA
+```
+
+## 2. Create a virtual environment
+
+### macOS / Linux
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### Windows
+
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
+
+---
+
+## 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+If additional dependencies used by the ingestion and retrieval modules are not included in `requirements.txt`, install them with:
+
+```bash
+pip install langchain
+pip install langchain-openai
+pip install langchain-community
+pip install langchain-text-splitters
+pip install langchain-chroma
+pip install langchain-huggingface
+pip install chromadb
+pip install openai
+pip install gradio
+pip install python-dotenv
+```
+
+---
+
+# 🔑 Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+OPENAI_API_KEY=your_openai_api_key
+```
+
+The application loads the API key using `python-dotenv`.
+
+> **Important:** Never commit your `.env` file or expose your OpenAI API key publicly.
+
+Make sure `.env` is included in `.gitignore`:
+
+```gitignore
+.env
+```
+
+---
+
+# 📄 Adding Insurance Policies
+
+Place your original PDF policy documents inside:
+
+```text
+data/original-pdfs/
+```
+
+For example:
+
+```text
+data/
+└── original-pdfs/
+    ├── health-insurance-policy.pdf
+    ├── life-insurance-policy.pdf
+    └── motor-insurance-policy.pdf
+```
+
+---
+
+# 🔄 Document Ingestion Pipeline
+
+The `convert.py` script converts PDF files into Markdown documents using Docling.
+
+```python
+from docling.document_converter import DocumentConverter
+```
+
+The converter processes every PDF in the source directory and exports the document as Markdown.
+
+Run:
+
+```bash
+python ingest/convert.py
+```
+
+The resulting Markdown files are stored in:
+
+```text
 data/knowledge-base/
+```
 
-The documents are then loaded using LangChain's DirectoryLoader.
+Example:
 
-loader = DirectoryLoader(
-    "data/knowledge-base",
-    glob="*.md",
-    loader_cls=TextLoader,
-    loader_kwargs={"encoding": "utf-8"}
-)
+```text
+data/
+└── knowledge-base/
+    ├── health-insurance-policy.md
+    ├── life-insurance-policy.md
+    └── motor-insurance-policy.md
+```
 
-documents = loader.load()
+---
 
-The loader reads the Markdown files and converts them into LangChain Document objects.
+# ✂️ Chunking & Embedding
 
-2. Text Chunking
+After conversion, the documents are loaded and divided into smaller chunks.
 
-Large policy documents are split into smaller chunks using:
+The current implementation uses:
 
+```python
 RecursiveCharacterTextSplitter(
     chunk_size=1000,
     chunk_overlap=200
 )
+```
 
-The pipeline becomes:
+This creates chunks of approximately 1000 characters with 200 characters of overlap between neighboring chunks.
 
-Large Policy Document
-        │
-        ▼
-RecursiveCharacterTextSplitter
-        │
-        ├── Chunk 1
-        ├── Chunk 2
-        ├── Chunk 3
-        ├── Chunk 4
-        └── ...
-Chunk Size
-chunk_size=1000
+The overlap helps preserve contextual information between adjacent sections of a policy.
 
-This specifies the target size of each chunk in characters.
+---
 
-Chunk Overlap
-chunk_overlap=200
+# 🧠 Embeddings
 
-This allows consecutive chunks to share some text and helps preserve context across chunk boundaries.
+Each document chunk is converted into a numerical vector using:
 
-3. Generate Embeddings
-
-Each chunk is converted into a numerical vector using OpenAI's embedding model:
-
-embeddings = OpenAIEmbeddings(
+```python
+OpenAIEmbeddings(
     model="text-embedding-3-large"
 )
+```
 
-Conceptually:
+These vectors capture the semantic meaning of the text.
 
-Policy Chunk
-     │
-     ▼
-OpenAI Embedding Model
-     │
-     ▼
-Numerical Vector
+For example:
 
-The vector represents the semantic meaning of the text.
+```text
+"What is the waiting period for pre-existing diseases?"
+```
 
-This allows the system to search based on meaning rather than only exact keyword matches.
+can retrieve a policy section containing wording such as:
 
-4. Store Embeddings in ChromaDB
+```text
+"Pre-existing diseases are subject to a waiting period..."
+```
 
-The generated embeddings are stored in ChromaDB:
+even when the exact words used in the question and document are different.
 
+---
+
+# 🗄️ ChromaDB
+
+The generated embeddings are stored in a Chroma vector database.
+
+The vector database is created using the processed document chunks:
+
+```python
 vectorstore = Chroma.from_documents(
     documents=chunks,
     embedding=embeddings,
     persist_directory=db_name
 )
+```
 
-ChromaDB stores information associated with the chunks, including:
+The resulting database is stored locally in:
 
-Document content
-Embeddings
-Metadata
-
-The resulting vector database is stored locally.
-
+```text
 vector_db/
+```
 
-The overall process is:
+The retrieval system then loads this vector store and performs semantic similarity search.
 
-Policy Chunks
-     │
-     ▼
-OpenAI Embeddings
-     │
-     ▼
-Vectors
-     │
-     ▼
-ChromaDB
-5. Retrieval
+---
 
-When a user asks a question, the question is converted into an embedding using the same embedding model.
+# 🔎 Retrieval
 
-For example:
+When the user asks a question, the retriever searches the vector database for the most semantically relevant chunks.
 
-"What is the waiting period for pre-existing diseases?"
+The current configuration retrieves:
 
-becomes:
+```python
+search_kwargs={"k": 5}
+```
 
-Question
-   │
-   ▼
+Therefore, the **top 5 relevant chunks** are passed to the language model.
+
+Example question:
+
+```text
+What is the waiting period for pre-existing diseases?
+```
+
+The system:
+
+1. Converts the question into an embedding.
+2. Searches ChromaDB.
+3. Finds the most relevant policy chunks.
+4. Combines those chunks into a context.
+5. Sends the context and question to the LLM.
+6. Generates the final answer.
+
+---
+
+# 🤖 Answer Generation
+
+The project uses:
+
+```text
+GPT-4o-mini
+```
+
+for answer generation.
+
+The model receives:
+
+```text
+System Prompt
+      +
+Retrieved Policy Context
+      +
+User Question
+```
+
+The system prompt instructs the model to:
+
+* Use only the retrieved policy information.
+* Avoid using general knowledge.
+* Never invent policy details.
+* Explicitly state when the provided documents do not contain enough information.
+
+This makes the application more grounded than a normal LLM chatbot.
+
+---
+
+# 💬 Running the Application
+
+After creating the vector database, run:
+
+```bash
+python retrieval/retriever.py
+```
+
+The application launches a Gradio chat interface:
+
+```python
+gr.ChatInterface(answer_question).launch()
+```
+
+You can then ask questions such as:
+
+```text
+What is the waiting period for pre-existing diseases?
+```
+
+```text
+Are maternity expenses covered?
+```
+
+```text
+What are the exclusions in this policy?
+```
+
+```text
+Is room rent capped?
+```
+
+```text
+What happens if I make a claim during the waiting period?
+```
+
+```text
+Does the policy cover hospitalization expenses?
+```
+
+---
+
+# 🧪 Example RAG Flow
+
+### User Question
+
+```text
+What is the waiting period for pre-existing diseases?
+```
+
+### Retrieval
+
+The retriever searches the vector database and returns the five most relevant policy chunks.
+
+```text
+Retrieved Chunk 1
+Retrieved Chunk 2
+Retrieved Chunk 3
+Retrieved Chunk 4
+Retrieved Chunk 5
+```
+
+### Context
+
+These chunks are combined into a single context.
+
+```text
+Policy Context
+      +
+User Question
+```
+
+### LLM
+
+GPT-4o-mini generates the final response using the retrieved information.
+
+### Result
+
+```text
+According to the policy, pre-existing diseases are subject
+to a specified waiting period before they become eligible
+for coverage.
+```
+
+The exact answer depends on the contents of the uploaded policy documents.
+
+---
+
+# 🛡️ Hallucination Control
+
+One of the important design decisions in this project is restricting the LLM to the retrieved context.
+
+The system prompt contains the following principle:
+
+```text
+Answer the user's question using ONLY the information
+provided in the context.
+```
+
+If the required information is not present, the assistant is instructed to respond:
+
+```text
+I don't have enough information in the provided policy
+documents to answer that.
+```
+
+This prevents the model from filling gaps using potentially incorrect general knowledge.
+
+---
+
+# 📊 RAG Components
+
+The project can be understood as five major components:
+
+### 1. Document Loader
+
+Loads the converted Markdown policy documents.
+
+### 2. Text Splitter
+
+Breaks large documents into manageable chunks.
+
+```text
+1000 character chunks
+200 character overlap
+```
+
+### 3. Embedding Model
+
+Converts text into numerical vectors.
+
+```text
 text-embedding-3-large
-   │
-   ▼
-Question Vector
+```
 
-The question vector is then compared against the vectors stored in ChromaDB.
+### 4. Vector Database
 
-The most semantically similar chunks are retrieved.
+Stores and searches embeddings.
 
-User Question
-      │
-      ▼
-Question Embedding
-      │
-      ▼
+```text
 ChromaDB
-      │
-      ▼
-Similarity Search
-      │
-      ▼
-Relevant Policy Chunks
-6. LLM Response Generation
+```
 
-The retrieved policy chunks are provided to GPT-4o-mini as context.
+### 5. LLM
 
-The system prompt instructs the model to use the retrieved information when answering the user's question.
+Generates the final response from retrieved context.
 
-Conceptually:
+```text
+GPT-4o-mini
+```
 
-User Question
-      │
-      ├─────────────────────┐
-      │                     │
-      ▼                     ▼
-Question              Retrieved
-                       Policy Chunks
-      │                     │
-      └──────────┬──────────┘
-                 ▼
-             GPT-4o-mini
-                 │
-                 ▼
-            Final Answer
+---
 
-This is the core RAG process.
+# 🧩 Why RAG?
 
-Complete RAG Pipeline
-                 INGESTION
-                     │
-                     ▼
-              Policy Documents
-                     │
-                     ▼
-               Markdown Files
-                     │
-                     ▼
-              DirectoryLoader
-                     │
-                     ▼
-                 Documents
-                     │
-                     ▼
-        RecursiveCharacterTextSplitter
-                     │
-                     ▼
-                   Chunks
-                     │
-                     ▼
-        text-embedding-3-large
-                     │
-                     ▼
-                 Embeddings
-                     │
-                     ▼
-                 ChromaDB
-                     │
-             ────────┴────────
-                     │
-                     ▼
-                 RETRIEVAL
-                     │
-                     ▼
-                User Question
-                     │
-                     ▼
-            Question Embedding
-                     │
-                     ▼
-             Similarity Search
-                     │
-                     ▼
-           Relevant Policy Chunks
-                     │
-                     ▼
-                 GPT-4o-mini
-                     │
-                     ▼
-                Final Answer
-Example Questions
+A normal LLM does not automatically know the contents of a user's private insurance policy.
 
-Users can ask natural-language questions such as:
+RAG solves this problem by providing the relevant policy sections to the LLM at query time.
 
-What is the waiting period for pre-existing diseases?
-What are the exclusions under the policy?
-Does the policy cover ambulance charges?
-What is the procedure for filing a claim?
-Are daycare procedures covered under the policy?
-What are the eligibility conditions for this policy?
-What happens if I receive treatment at a non-network hospital?
-Running the Project
-1. Clone the Repository
-git clone https://github.com/anishpulsay/Insurance-Policy-QA.git
+Instead of:
 
-Navigate into the project:
+```text
+Question → LLM → Answer
+```
 
-cd Insurance-Policy-QA
-2. Create a Virtual Environment
-python3 -m venv .venv
+this project uses:
 
-Activate it:
-
-source .venv/bin/activate
-3. Install Dependencies
-pip install -r requirements.txt
-
-If you are using uv:
-
-uv sync
-Environment Variables
-
-Create a .env file in the project root:
-
-OPENAI_API_KEY=your_openai_api_key
-
-The .env file should never be committed to GitHub.
-
-Make sure .gitignore contains:
-
-.env
-.venv/
-__pycache__/
-vector_db/
-Running the Ingestion Pipeline
-
-Run the ingestion pipeline to create or update the Chroma vector database.
-
-The process is:
-
-Markdown Documents
-        ↓
-Document Loading
-        ↓
-Chunking
-        ↓
-Embeddings
-        ↓
-ChromaDB
-Running the Retrieval Application
-
-The retrieval application is located in:
-
-retrieval/retriever.py
-
-Run it using:
-
-uv run retrieval/retriever.py
-
-The Gradio interface will start locally.
-
-Open the local URL displayed in the terminal, typically:
-
-http://127.0.0.1:7860
-Example RAG Interaction
-User
-What is the waiting period for pre-existing diseases?
-System
+```text
 Question
    ↓
-Generate Question Embedding
-   ↓
-Search ChromaDB
-   ↓
-Retrieve Relevant Policy Chunks
-   ↓
-Provide Context to GPT-4o-mini
-   ↓
-Generate Answer
-
-The answer should be based on the information retrieved from the policy documents.
-
-Why RAG?
-
-Insurance policies can contain large amounts of information spread across many pages.
-
-Users may have difficulty finding specific information such as:
-
-Waiting periods
-Exclusions
-Coverage conditions
-Claim procedures
-Eligibility requirements
-Hospitalisation rules
-Policy limitations
-
-Instead of manually searching through long policy documents, PolicyRAG allows users to ask questions in natural language.
-
-The system retrieves the relevant sections and uses them as context for generating the answer.
-
-Key Concepts Demonstrated
-Retrieval-Augmented Generation
-
-Combining document retrieval with an LLM to provide context-specific answers.
-
-Embeddings
-
-Representing text as numerical vectors that capture semantic meaning.
-
-Vector Databases
-
-Storing and searching embeddings efficiently.
-
 Semantic Search
+   ↓
+Relevant Policy Sections
+   ↓
+LLM
+   ↓
+Grounded Answer
+```
 
-Finding relevant information based on meaning rather than exact keyword matches.
+This makes RAG particularly useful for document-heavy domains such as insurance, legal documents, finance and compliance.
 
-Document Chunking
+---
 
-Breaking large documents into smaller units suitable for embedding and retrieval.
+# 📈 Future Improvements
 
-Prompt Grounding
+The current implementation provides the foundation for a more advanced insurance policy assistant.
 
-Providing retrieved documents to an LLM as context for generating responses.
+Potential improvements include:
 
-Future Improvements
- Add source citations to answers
- Display retrieved policy sections in the UI
- Add metadata-based filtering
- Add hybrid keyword + semantic search
- Add a reranking model
- Improve chunking strategy for policy documents
- Add retrieval evaluation metrics
- Add support for multiple insurance providers
- Add conversational memory
- Improve the Gradio interface
- Add automated evaluation of retrieved chunks
- Add direct PDF ingestion
-Limitations
+### 🔹 Hybrid Search
 
-The quality of the final answer depends on:
+Combine:
 
-The quality of the source documents
-The document conversion process
-The chunking strategy
-The embedding model
-The quality of retrieved chunks
-The LLM's ability to use the retrieved context
+* semantic/vector search
+* keyword/BM25 search
 
-If relevant information is not retrieved, the final answer may not contain the required information.
+to improve retrieval for exact policy terminology.
 
-Disclaimer
+### 🔹 Metadata Filtering
 
-This project is developed for educational and experimental purposes.
+Store metadata such as:
 
-The responses generated by the system should not be considered professional insurance, legal, or financial advice.
+```text
+Policy Name
+Section
+Page Number
+Policy Type
+Insurer
+```
 
-Users should refer to the original insurance policy documents and consult the insurance provider for authoritative information.
+and use it during retrieval.
 
-License
+### 🔹 Source Citations
 
-This project is licensed under the MIT License.
+Return the exact:
+
+```text
+Policy → Page → Section
+```
+
+used to generate an answer.
+
+### 🔹 Reranking
+
+Retrieve more candidates initially and use a reranker to select the most relevant chunks.
+
+```text
+Query
+ ↓
+Retrieve 20 chunks
+ ↓
+Reranker
+ ↓
+Top 5 chunks
+ ↓
+LLM
+```
+
+### 🔹 Better Document Parsing
+
+Improve handling of:
+
+* tables
+* headers
+* footers
+* page numbers
+* policy clauses
+* structured sections
+
+### 🔹 Evaluation
+
+Introduce a RAG evaluation pipeline measuring:
+
+* retrieval precision
+* retrieval recall
+* answer faithfulness
+* context relevance
+* answer correctness
+
+### 🔹 Conversational Memory
+
+Allow users to ask follow-up questions while maintaining relevant conversation context.
+
+### 🔹 Multi-Policy Comparison
+
+Allow users to compare multiple insurance policies:
+
+```text
+Policy A vs Policy B
+
+Waiting Period
+Room Rent
+Maternity
+Co-pay
+Exclusions
+Coverage
+```
+
+---
+
+# 🎯 Learning Objectives
+
+This project demonstrates practical implementation of:
+
+* Retrieval-Augmented Generation (RAG)
+* Semantic search
+* Vector embeddings
+* Vector databases
+* Document preprocessing
+* Document chunking
+* LangChain
+* OpenAI APIs
+* ChromaDB
+* Prompt engineering
+* LLM grounding
+* Gradio application development
+
+---
+
+# ⚠️ Disclaimer
+
+This project is intended for **educational and demonstration purposes**.
+
+The answers generated by the system should not be considered legal, financial, medical, or insurance advice.
+
+Always refer to the original insurance policy and consult the relevant insurer or qualified professional when making important decisions.
+
+---
+
+# 📜 License
+
+This project is licensed under the **MIT License**.
+
+See the [`LICENSE`](LICENSE) file for details.
+
+---
+
+# 👨‍💻 Author
+
+**Anish Pulsay**
+
+GitHub: [@anishpulsay](https://github.com/anishpulsay)
+
+---
+
+## ⭐ If You Found This Useful
+
+Consider giving the repository a ⭐ on GitHub!
+
+[Repository](https://github.com/anishpulsay/Insurance-Policy-QA)
